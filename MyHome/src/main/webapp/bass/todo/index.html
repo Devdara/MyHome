@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<title>Baas Test</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0">
+<link href='http://fonts.googleapis.com/css?family=Open+Sans:700,300,600,800,400' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Alegreya+Sans:100' rel='stylesheet' type='text/css'>
+<style>
+	body, html	{padding:0; margin:0; background:#fff;}
+	h1				{text-align:center; padding:40px; background:#37d; margin:auto; font-size:66px; color:#fff; font-family: 'Alegreya Sans'; font-weight:100; text-shadow:0 1px 1px rgba(0,0,0,.4);}
+	h1	.container	{width:500px; display:block; margin:auto; text-align:center;}
+	div.todo-new	{margin-bottom:30px; background:#eee; padding:10px; margin-bottom: 20px;}
+	input#todo-new	{border:1px solid #aaa; border-width:0; padding:10px; font-size:16px; width:500px; margin:auto; display:block; outline:none; background:transparent; color:#37d;}
+	input#todo-new[disabled]	{opacity: .5; -webkit-filter:blur(2px);}
+	div.todo-box	{margin:0 auto 50px auto; width:500px;}
+	div.list-title	{font-size:30px; color:#433; font-family:"Open Sans"; font-weight:300; border-bottom:1px solid #655;}
+	ul, li			{list-style:none; padding:0; margin:0;}
+	ul.todo			{margin-bottom:50px;}
+	ul.todo		li	{padding:10px; font-size:16px; color:#666; position:relative; border-bottom:1px solid transparent;}
+	ul.todo		li	.todo-string	{outline:none; white-space:nowrap;}
+	ul.todo		li	.todo-string:focus	{color:#37d;}
+	ul.todo		li	a.delete	{display:inline-block; width:16px; height:16px; border-radius:16px; line-height:20px; background:#ccc; color:#fff; text-align:center; margin-left:10px; transition:.1s linear; opacity:0; cursor:pointer;}
+	ul.todo		li	a.complete	{display:block; width:26px; height:26px; position:absolute; top:5px; left:-36px; line-height:30px; font-size:20px; font-weight:bold; color:#fff; text-align:center; background:#37d; margin-left:10px; border-radius:3px; vertical-align:middle; transition:.1s linear; opacity:0; cursor:pointer;}
+	ul.todo		li	a.complete	{display:block; width:26px; height:26px; position:absolute; top:5px; left:-36px; line-height:30px; font-size:20px; font-weight:bold; color:#fff; text-align:center; background:#37d; margin-left:10px; border-radius:3px; vertical-align:middle; transition:.1s linear; opacity:0; cursor:pointer;}
+	ul.todo		li	a.revive	{display:block; width:26px; height:26px; position:absolute; top:5px; left:-36px; line-height:30px; font-size:14px; font-weight:bold; color:#fff; text-align:center; background:#8b0; margin-left:10px; border-radius:3px; vertical-align:middle; transition:.1s linear; opacity:0; cursor:pointer;}
+	ul.todo		li:hover	{border-bottom-color:#bbb;}
+	ul.todo		li:hover	a.complete	{opacity:1;}
+	ul.todo		li:hover	a.delete	{opacity:1;}
+	ul.todo		li:hover	a.revive	{opacity:1;}
+	ul.todo.did	li:hover	{border-bottom-color:transparent;}
+	ul.todo.did	li	.todo-string	{opacity:.5;}
+	div.current-user	{display:block; position:absolute; top:10px; right:10px; font-size:11px; color:#fff; text-align:right;}
+	div.baseinfo				{display:block; position:absolute; top:125px; left:50%; width:400px; padding:5px; margin-left:-200px; font-size:11px; color:#fff; text-align:left; background:#fff; border-radius:4px; box-shadow:0 6px 50px rgba(0,0,0,.4); transition:.3s ease-out all; z-index:999;}
+	div.baseinfo	input		{background:transparent; border:none; width:100%; color:#37d; font-size:16px; border-bottom:1px solid #ddd; display:block; padding:5px; box-sizing:border-box; transition:.3s ease-out all;}
+	div.baseinfo	a.btn-primary	{display:block; margin-top:5px;}
+	div.baseinfo.small		{top:10px; left:10px; background:#37d; margin:0; box-shadow:none; padding:0; height:16px;}
+	div.baseinfo.small	input	{color:#fff; font-size:11px; border-bottom:none; height:16px; padding:0;}
+	div.baseinfo.small	#baas-id, 
+	div.baseinfo.small	#baas-pw,
+	div.baseinfo.small	a	{opacity:0; display:none;}
+	a.btn-primary		{color:#fff; font-size:16px; font-weight:bold; min-width:100px; padding:4px 10px; border-radius:3px; background:#37d; display:inline-block; text-align:center; cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="baseinfo">
+	<input id="key" type="text" value="51fa75dd-b48c-4610-bf65-2fa6dfe7b692">
+	<input id="baas-id" type="text" placeholder="Test ID">
+	<input id="baas-pw" type="password" placeholder="Test PW">
+	<a class="btn-primary">확인</a>
+</div>
+<div class="current-user"></div>
+<h1><span class="container">todo✓</span></h1>
+<div class="todo-new">
+	<input type="text" id="todo-new" placeholder="새 할일 추가" disabled>
+</div>
+<div class="todo-box">
+	<div class="list-title">Todo</div>
+	<ul class="todo" id="todo-now">
+		<!-- 현재 Todo 내용 삽입 -->
+	</ul>
+	<div class="list-title">Did</div>
+	<ul class="todo did" id="todo-did">
+		<!-- 구 Todo 내용 삽입 -->
+	</ul>
+</div>
+<script>
+	
+	var Baas = {};
+	
+	window.onload = function() {		
+		// start..... API Key 설정.
+		var promise = Q.resolve();
+		
+		// 유저 설정.
+		var userinfo = {
+			username : null, // test용 id 설정. 없으면 생성하고 로그인.
+			password : null // test용 pw.
+		};
+
+		// 위에 작성된 HTML 객체들에 대한 변수 생성.
+		var todoNew = $("#todo-new");
+		var todoNow = $("#todo-now");
+		var todoDid = $("#todo-did");
+
+		// BaaS 서버의 todo 테이블 내용을 담을 변수 생성.
+		var todoTable,
+			didTable;
+
+		var sessionUser;
+
+		$(".baseinfo a.btn-primary").click(function(e) {
+			if ($("#key").val().length < 1) {
+				alert("Key를 입력해주세요.. ");
+				return false;
+			}
+			if ($("#baas-id").val().length < 1) {
+				alert("id를 입력해주세요.. ");
+				return false;
+			}
+			if ($("#baas-pw").val().length < 1) {
+				alert("패스워드를 입력해주세요.. ");
+				return false;
+			}
+			
+			// key값, userinfo값 받음.
+			Baas.API_KEY = $("#key").val();
+			userinfo.username = $("#baas-id").val();
+			userinfo.password = $("#baas-pw").val();
+			
+			// 테스트유저 생성/로그인.
+			promise = promise.then(function() {
+				//user 생성하고,
+				sessionUser = new Baas.User({
+					username : userinfo.username,
+					password : userinfo.password
+				});
+
+				// user 등록.. 실패시 userinfo의 정보대로 로그인.
+				return sessionUser.signIn().then(function () {
+					console.log("sessionUser :");
+					console.log(sessionUser);
+				}).fail(function (reason) {
+					return Baas.User.logIn(userinfo.username, userinfo.password).then(function() {
+						console.log("로그인 성공...");
+						console.log(sessionUser);
+					});
+				});
+			}).then(function() {
+				todoNew.removeAttr("disabled");//todo 입력란 활성화.
+				initTodo(todoTable, false);// todo 목록 불러옴.
+				$("div.baseinfo").addClass("small");//정보 입력란 감춤.
+				$("div.current-user").text(userinfo.username);
+			}).fail(function (reason) {
+				console.log(reaseon);
+				console.log("유저 등록 실패...");
+			});
+		});
+		
+		
+		// 신규 todo 아이템 추가하고 BaaS 서버로 전송.
+		promise = promise.then(function() {
+			todoNew.keypress(function(event) {
+				if (event.keyCode == 13) {
+					if (todoNew.val().length < 1) {
+						return false;
+					};
+					console.log("todo에 테스트 내용을 삽입....");
+					
+					//ACL 설정
+					var me = Baas.User.getMe();
+					console.log(me.id);
+					var acl = new Baas.Acl();
+					acl.setReadAccess(me.id, true);
+					acl.setWriteAccess(me.id, true);
+					acl.setPublicReadAccess(false);
+					acl.setPublicWriteAccess(false);
+					
+					var todoItem = Baas.Object.create("todo"); // BaaS오브젝트 생성("테이블 네임") 식으로 테이블 셀렉팅.
+					todoItem.setAcl(acl);
+					todoItem.set({
+						todo : todoNew.val(), // 인풋의 value를 서버의 todo 컬럼에 저장;;
+						did : false, // 완료 아님.
+						deleted : false // 삭제된 상태 아님.
+					});
+					console.log(sessionUser);
+					console.log(todoItem);
+					return todoItem.save().then(function() {
+						console.log("todo 저장 완료");
+						initTodo(todoTable, true);
+						todoNew.val("");
+					}).fail(function(reason) {
+						console.error("todo 저장 실패");
+						console.error(reason);
+					});
+				};
+			});	
+		});
+		
+		// todo-now의 항목을 삭제하기.
+		promise = promise.then(function() {
+			$("div.todo-box").on("click", "a.delete", function(e) {
+				e.preventDefault();
+				var isDelete = confirm("삭제합니다."/* + $(this).parent().attr("id")*/);
+				if (isDelete) {
+					var todoItem = Baas.Object.create("todo");
+					todoItem.set("objectId", $(this).parent().attr("id")); // 객체를 지정하려면 objectID가 필요한듯 하다.
+					todoItem.set("deleted", true);
+					return todoItem.save().then(function() {
+						console.log("todo item 삭제 완료");
+						initTodo(todoTable, true);
+					}).fail(function(reason) {
+						console.error("todo 삭제 실패");
+						console.error(reason);
+					});
+				};
+			});	
+		});
+		
+		// todo-now 항목 완료 하기.
+		promise = promise.then(function() {
+			todoNow.on("click", "a.complete", function(e) {
+				e.preventDefault();
+				var todoItem = Baas.Object.create("todo");
+				todoItem.set("objectId", $(this).parent().attr("id"));
+				todoItem.set("did", true);
+				return todoItem.save().then(function() {
+					console.log("todo item 완료");
+					initTodo(todoTable, true);
+				}).fail(function(reason) {
+					console.error("todo item 완료 실패");
+					console.error(reason);
+				});
+			});
+		});
+		
+		// todo-did 항목을 부활시키기.
+		promise = promise.then(function() {
+			todoDid.on("click", "a.revive", function(e){
+				e.preventDefault();
+				var todoItem = Baas.Object.create("todo");
+				todoItem.set("objectId", $(this).parent().attr("id"));
+				todoItem.set("did", false);
+				return todoItem.save().then(function() {
+					console.log("todo item 부활");
+					initTodo(todoTable, true);
+				}).fail(function(reason) {
+					console.error("todo item 부활 실패");
+					console.error(reason);
+				});
+			});
+		});
+		
+		// todo-now의 내용 수정
+		promise = promise.then(function() {
+			todoNow.on("keydown", "span.todo-string", function(event) {
+				if (event.keyCode == 13) {
+					var todoItem = Baas.Object.create("todo");
+					todoItem.set("objectId", $(this).parent().attr("id")); // 객체를 지정하려면 objectID가 필요한듯 하다.
+					todoItem.set("todo", $(this).text());
+					return todoItem.save().then(function() {
+						console.log("todo item 수정 완료");
+						initTodo(todoTable, true);
+					}).fail(function(reason) {
+						console.error("todo 수정 실패");
+						console.error(reason);
+					});
+				};
+			});
+		});
+			
+		
+		// todo 테이블의 목록 불러와서 화면에 적용. todoTable : todo테이블 변수. refresh : todo 목록 리프레시 할 것인지?
+		function initTodo(todoTable, refresh) {
+			refresh = typeof refresh !== 'undefined' ? refresh :false;
+			
+			todoTable = Baas.Table.create("todo");
+			todoTable.where('deleted').eq(false);
+			//todoTable.where('owner').eq(userinfo.username);
+			
+			return todoTable.fetch().then(function() {
+				console.log(todoTable);
+				if (refresh) {
+					todoNow.empty();
+					todoDid.empty();
+				};
+				todoTable.each(function(i) {
+					if (i.attributes.did) {
+						todoDid.append('<li id="' + i.id + '"><a class="revive">⬆</a><span class="todo-string">' + i.attributes.todo + '</span><a class="delete" href="#">×</a></li>');
+					} else {
+						todoNow.append('<li id="' + i.id + '"><a class="complete">✓</a><span class="todo-string" contenteditable>' + i.attributes.todo + '</span><a class="delete" href="#">×</a></li>');
+					};
+				});
+			}).fail(function(reason){
+				console.error("Todo 테이블 Fetch 실패");
+				console.error(reason);
+			});
+		};
+		
+	};
+</script>
+<script src="js/underscore.js"></script>
+<script src="js/jquery.js"></script>
+<script src="js/backbone.js"></script>
+<script src="js/q.js"></script>
+<script src="js/baas.min.js"></script>
+</body>
+</html>

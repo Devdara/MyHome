@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.dao.UserMapper">
+
+	<resultMap type="com.spring.vo.BbsVO" id="BbsVO">
+		<result property="no" column="NO"/>
+		<result property="writer" column="WRITER"/>
+		<result property="subject" column="SUBJECT"/>
+		<result property="content" column="CONTENT"/>
+		<result property="date" column="DATE"/>
+	</resultMap>
+	
+	<select id="selectAllBbs" parameterType="com.spring.vo.BbsVO" resultMap="BbsVO">
+		SELECT * FROM
+        	(SELECT @ROWNUM :=@ROWNUM +1 AS ROW, A.*
+        FROM
+        	(SELECT * FROM BBS ORDER BY NO DESC) A, (SELECT @ROWNUM := 0) B) C
+        WHERE
+        	C.ROW BETWEEN (1+(#{pNum}-1)*10) AND (#{pNum}*10);
+	</select>
+	
+	<select id="selectBbs" parameterType="com.spring.vo.BbsVO" resultMap="BbsVO">
+		SELECT NO, WRITER, SUBJECT, CONTENT, DATE
+		FROM BBS
+		WHERE NO=#{bNum};
+	</select>
+	
+	<select id="rowCount" resultType="int">
+		SELECT COUNT(NO)
+    	FROM BBS
+	</select>
+	
+	<insert id="insertBbs" parameterType="com.spring.vo.BbsVO">
+		INSERT INTO bbs
+			(WRITER, CONTENT, SUBJECT, DATE) 
+		VALUES
+			( #{writer}, #{content}, #{subject}, now() )
+	</insert>
+	
+	<update id="updateBbs" parameterType="com.spring.vo.BbsVO">
+		UPDATE bbs
+			SET CONTENT=#{content}, DATE=now() 
+		WHERE NO=#{no}
+	</update>
+	
+</mapper>
